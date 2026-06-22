@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CM59 神經生物學考古題遊戲</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 30px 20px;
+        }
+
+        /* 做題模式 */
+        .quiz-mode {
+            display: none;
+        }
+
+        .quiz-mode.active {
+            display: block;
+        }
+
+        .progress-bar {
+            background: #e0e0e0;
+            height: 8px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            height: 100%;
+            transition: width 0.3s ease;
+        }
+
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .feedback {
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid;
+            animation: pulse 0.5s ease-in-out;
+        }
+
+        .feedback.correct {
+            background-color: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+        }
+
+        .feedback.incorrect {
+            background-color: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+        }
+
+        .feedback h3 {
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        .feedback-detail {
+            font-size: 14px;
+            margin: 8px 0;
+        }
+
+        .feedback-hint {
+            background: rgba(0,0,0,0.1);
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+            font-size: 13px;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0; transform: translateY(-10px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        .question {
+            margin-bottom: 30px;
+        }
+
+        .question h2 {
+            font-size: 20px;
+            color: #333;
+            margin-bottom: 20px;
+            line-height: 1.4;
+        }
+
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .option-btn {
+            padding: 15px;
+            border: 2px solid #ddd;
+            background: white;
+            border-radius: 8px;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 16px;
+        }
+
+        .option-btn:hover:not(:disabled) {
+            border-color: #667eea;
+            background-color: #f8f9ff;
+        }
+
+        .option-btn.selected {
+            border-color: #667eea;
+            background-color: #e8ebf7;
+            color: #333;
+        }
+
+        .option-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .option-label {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            border: 2px solid currentColor;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 26px;
+            margin-right: 12px;
+            font-weight: bold;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 30px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-prev {
+            background-color: #999;
+            color: white;
+        }
+
+        .btn-prev:hover:not(:disabled) {
+            background-color: #777;
+        }
+
+        .btn-next {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-next:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-submit {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .btn-submit:hover:not(:disabled) {
+            background-color: #218838;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .warning {
+            background-color: #fff3cd;
+            border: 1px solid #ffc107;
+            color: #856404;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 20px;
+            font-size: 14px;
+        }
+
+        /* 結果模式 */
+        .results-mode {
+            display: none;
+        }
+
+        .results-mode.active {
+            display: block;
+        }
+
+        .score-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .score-card .score {
+            font-size: 72px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .score-card .total {
+            font-size: 24px;
+            margin-bottom: 20px;
+            opacity: 0.9;
+        }
+
+        .score-card .feedback-msg {
+            font-size: 20px;
+        }
+
+        .view-toggle {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .view-btn {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background-color: #e9ecef;
+            color: #495057;
+        }
+
+        .view-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .quick-view {
+            display: none;
+        }
+
+        .quick-view.active {
+            display: block;
+        }
+
+        .grid-numbers {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(50px, 1fr));
+            gap: 8px;
+            margin: 20px 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            border-radius: 8px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .grid-btn {
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .grid-btn.correct {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .grid-btn.incorrect {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .grid-btn.unanswered {
+            background-color: #ccc;
+            color: #666;
+        }
+
+        .detailed-view {
+            display: none;
+        }
+
+        .detailed-view.active {
+            display: block;
+        }
+
+        .answer-item {
+            border-left: 4px solid;
+            padding: 15px;
+            margin-bottom: 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .answer-item.correct {
+            border-color: #28a745;
+            background-color: #d4edda;
+        }
+
+        .answer-item.incorrect {
+            border-color: #dc3545;
+            background-color: #f8d7da;
+        }
+
+        .answer-item.unanswered {
+            border-color: #aaa;
+            background-color: #f0f0f0;
+        }
+
+        .answer-item-title {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .answer-item-content {
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .answer-detail {
+            display: none;
+            background: rgba(0,0,0,0.05);
+            padding: 12px;
+            border-radius: 4px;
+            margin-top: 10px;
+            font-size: 13px;
+        }
+
+        .answer-detail.show {
+            display: block;
+        }
+
+        .review-mode {
+            display: none;
+        }
+
+        .review-mode.active {
+            display: block;
+        }
+
+        .review-header {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .review-header h2 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .review-item {
+            background-color: #f8d7da;
+            border-left: 4px solid #dc3545;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+        }
+
+        .review-item h4 {
+            color: #721c24;
+            margin-bottom: 10px;
+        }
+
+        .review-item p {
+            font-size: 14px;
+            color: #721c24;
+            margin: 8px 0;
+        }
+
+        .your-answer {
+            color: #dc3545;
+            font-weight: bold;
+        }
+
+        .correct-answer {
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        .explanation-box {
+            background-color: #cfe2ff;
+            border-left: 4px solid #0d6efd;
+            padding: 12px;
+            border-radius: 4px;
+            margin-top: 10px;
+            font-size: 13px;
+            color: #084298;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📚 CM59 神經生物學考古題</h1>
+            <p>互動式練習 - 74道完整題目</p>
+        </div>
+
+        <div class="content">
+            <!-- 做題模式 -->
+            <div class="quiz-mode active">
+                <div class="progress-info">
+                    <span id="questionNumber">第 1 / 74 題</span>
+                    <span id="wrongCount">已作答: 0 | ❌ 錯誤: 0</span>
+                </div>
+
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+
+                <div id="feedback" class="feedback hidden"></div>
+
+                <div class="question">
+                    <h2 id="questionText"></h2>
+                    <div class="options" id="optionsContainer"></div>
+                </div>
+
+                <div class="buttons">
+                    <button class="btn btn-prev" id="prevBtn" onclick="previousQuestion()">← 上一題</button>
+                    <button class="btn btn-next" id="nextBtn" onclick="nextQuestion()">下一題 →</button>
+                </div>
+
+                <div id="warning" class="warning hidden">💡 請先選擇一個答案再繼續</div>
+            </div>
+
+            <!-- 結果模式 -->
+            <div class="results-mode">
+                <div class="score-card">
+                    <div class="score" id="scorePercentage">0%</div>
+                    <div class="total" id="scoreText">得分: 0 / 74</div>
+                    <div class="feedback-msg" id="scoreFeedback">💪 繼續加油！</div>
+                </div>
+
+                <button class="btn btn-submit" id="reviewBtn" style="margin-bottom: 20px; display: none;">
+                    📖 進入錯題複習 (<span id="wrongCount2">0</span> 題) ⭐
+                </button>
+
+                <div class="view-toggle">
+                    <button class="view-btn active" onclick="switchView('quick')">⚡ 快速檢查</button>
+                    <button class="view-btn" onclick="switchView('detailed')">📝 詳細解釋</button>
+                </div>
+
+                <!-- 快速檢查 -->
+                <div class="quick-view active">
+                    <div class="grid-numbers" id="gridNumbers"></div>
+                    <p style="text-align: center; color: #666; font-size: 14px;">
+                        💚 綠色=正確 | ❌ 紅色=錯誤 | 灰色=未作答
+                    </p>
+                </div>
+
+                <!-- 詳細解釋 -->
+                <div class="detailed-view">
+                    <h3 style="margin-bottom: 20px;">📝 答案詳解</h3>
+                    <div id="detailedAnswers"></div>
+                </div>
+
+                <button class="btn btn-submit" onclick="resetQuiz()" style="margin-top: 20px;">🔄 重新開始</button>
+            </div>
+
+            <!-- 錯題複習模式 -->
+            <div class="review-mode">
+                <div class="review-header">
+                    <h2>❌ 錯題複習 (<span id="wrongCount3">0</span> 題)</h2>
+                </div>
+
+                <div id="reviewItems"></div>
+
+                <div class="buttons">
+                    <button class="btn btn-prev" onclick="exitReview()">← 回到成績</button>
+                    <button class="btn btn-submit" onclick="resetQuiz()">🔄 重新練習</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const questions = [
+            { question: "What is the most abundant cation outside of cells?", options: ["K+", "Na+", "Ca2+", "Mg2+"], answer: 1, explanation: "細胞外最豐富的陽離子是Na+（鈉離子）。這是維持滲透壓和靜止膜電位的重要離子。" },
+            { question: "What is the most abundant anion in the extracellular fluid?", options: ["Chloride", "Phosphate", "Bicarbonate", "Sulfate"], answer: 0, explanation: "細胞外最豐富的陰離子是氯離子（Cl-）。濃度約為145 mM。" },
+            { question: "What is the most abundant cation inside of cells?", options: ["Na+", "K+", "Ca2+", "Mg2+"], answer: 1, explanation: "細胞內最豐富的陽離子是K+（鉀離子）。細胞內K+濃度約為140 mM，遠高於細胞外。" },
+            { question: "What is the most abundant cation in the blood?", options: ["Na+", "K+", "Ca2+", "Mg2+"], answer: 0, explanation: "血液中最豐富的陽離子是Na+。血漿中Na+濃度約為140 mM。" },
+            { question: "Which of the following ion controls muscle contraction?", options: ["Na+", "K+", "Ca2+", "Cl-"], answer: 2, explanation: "Ca2+（鈣離子）控制肌肉收縮。Ca2+從肌動蛋白和肌球蛋白的相互作用中釋放，促進收縮。" },
+            { question: "After action potential arrives to presynaptic terminal, which ion influx is responsible for neurotransmitter release?", options: ["Na+", "K+", "Ca2+", "Cl-"], answer: 2, explanation: "突觸前終端的Ca2+內流引發神經傳遞物質釋放。Ca2+進入會激活SNARE複合物，導致囊泡融合。" },
+            { question: "Imagine the astrocyte resting potential is -80 mV, the equilibrium potential of Cl- is 0 mV, K+ is -90 mV. If Cl- channel and K+ channel open, which direction do these ions flow?", options: ["Cl- from outside to inside and K+ from inside to outside", "Cl- from inside to outside and K+ from inside to outside", "Cl- from outside to inside and K+ from outside to inside", "Cl- from inside to outside and K+ from outside to inside"], answer: 0, explanation: "膜電位-80 mV介於Cl-平衡電位(0 mV)和K+平衡電位(-90 mV)之間。Cl-會內流(趨向0)，K+會外流(趨向-90)。" },
+            { question: "The neuronal resting potential is -65 mV; the equilibrium potential of Cl- is -70 mV, Na+ is +60 mV, and K+ is -80 mV. Which channel opening will cause hyperpolarization?", options: ["Cl- only", "Cl- and K+", "Na+ only", "Cl- and Na+"], answer: 1, explanation: "超極化是指膜電位變得更負。Cl-平衡電位-70 mV，K+平衡電位-80 mV，都比靜息膜電位-65 mV更負，所以兩者開放都會超極化。" },
+            { question: "After action potential arrives at the presynaptic terminal, which channel or receptor is responsible for the neurotransmitter release?", options: ["GABAA receptor", "Sodium channel", "Calcium channel", "Potassium channel"], answer: 2, explanation: "突觸前終端的電壓依賴型鈣通道（L型或P/Q型）開放，Ca2+內流是神經傳遞物質釋放的關鍵。" },
+            { question: "Which of the following protein mediates excitatory synaptic transmission?", options: ["Glutamate receptor", "GABAA receptor", "Glycine receptor", "Dopamine receptor"], answer: 0, explanation: "麩胺酸受體（NMDA、AMPA、Kainate等）是興奮性突觸傳遞的主要介質。激活時使細胞去極化。" },
+            { question: "Which channel is responsible for the falling phase of action potential?", options: ["Sodium channel", "Potassium channel", "GABAA receptor", "Glutamate receptor"], answer: 1, explanation: "動作電位下降期由K+通道開放引起。K+外流使膜電位恢復負值。" },
+            { question: "Which of the following channel is responsible for generation of action potential?", options: ["Glutamate receptor", "GABAA receptor", "Potassium channel", "Sodium channel"], answer: 3, explanation: "Na+通道開放引起動作電位的上升期。Na+內流導致去極化。" },
+            { question: "Inhibitory postsynaptic potential is mediated by?", options: ["GABAA receptor", "Glutamate receptor", "Sodium channel", "Potassium channel"], answer: 0, explanation: "抑制性突後電位（IPSC）由GABAA和Glycine受體介導，引起Cl-內流或K+外流，導致超極化。" },
+            { question: "Which of the following cells cannot be a postsynaptic cell?", options: ["Muscle cell", "Gland cell", "Neuron", "Oligodendrocyte"], answer: 3, explanation: "寡樹突膠質細胞（Oligodendrocyte）是中樞神經系統的髓鞘形成細胞，不是突後細胞。突後細胞需要有突觸受體。" },
+            { question: "Which of the following channels are responsible for the rising phase of action potentials?", options: ["Sodium channels", "Potassium channels", "GABAA receptors", "Glutamate receptors"], answer: 0, explanation: "動作電位上升期由Na+通道開放引起。Na+內流快速導致去極化，膜電位從-65 mV升至約+30 mV。" },
+            { question: "The major ion channel responsible for the undershot phase of action potential is?", options: ["Sodium channel", "Potassium channel", "Chloride channel", "Glutamate receptor"], answer: 1, explanation: "欠衝期（undershoot）由K+通道的延遲關閉引起，K+持續外流使膜電位短暫低於靜息電位。" },
+            { question: "The major ion channel responsible for the resting potential is?", options: ["Sodium channel", "Potassium channel", "Chloride channel", "Glutamate receptor"], answer: 1, explanation: "靜息膜電位主要由K+通道（特別是洩漏通道）決定。由於膜對K+的通透性遠高於Na+，K+平衡電位接近靜息膜電位。" },
+            { question: "Which of the following protein uses the energy of ATP?", options: ["Sodium channel", "Glutamate receptor", "Potassium channel", "Sodium-potassium pump"], answer: 3, explanation: "Na+/K+-ATP酶（Na+/K+ pump）使用ATP能量泵出3個Na+，泵入2個K+，維持離子濃度梯度。" },
+            { question: "Long-term potentiation involves?", options: ["Glutamate receptors", "GABAA receptors", "Potassium channel", "Sodium channel"], answer: 0, explanation: "長期強化（LTP）涉及NMDA和AMPA受體激活，導致AMPA受體增加和突觸強度長期增加。" },
+            { question: "Which of the following receptors is involved in Taste?", options: ["GABAA receptor", "Thermoreceptor", "Glutamate receptor", "G-protein coupled receptor"], answer: 3, explanation: "味覺受體多為G蛋白偶聯受體（GPCR），感受甜、苦等味道。麩胺酸是鮮味的關鍵。" },
+            { question: "Which of the following receptors is involved in salty taste?", options: ["G-protein coupled receptor", "Sodium channel", "GABAA receptor", "Thermoreceptor"], answer: 1, explanation: "鹹味由舌頭上皮的上皮性Na+通道感受，Na+直接進入感受細胞引起去極化。" },
+            { question: "Which of the following receptors is involved in sour taste?", options: ["G-protein coupled receptor", "TRP protein", "GABAA receptor", "Thermoreceptor"], answer: 1, explanation: "酸味由TRP通道（特別是TRPV1）感受，H+離子激活這些離子通道。" },
+            { question: "Which of the following is NOT included in basic tastes?", options: ["Saltiness", "Spice", "Sweetness", "Bitterness", "Umami"], answer: 1, explanation: "五種基本味覺是：鹹、甜、苦、酸、鮮味（umami）。辛辣（spice）不是基本味覺，而是痛覺信號。" },
+            { question: "Which of the following receptor is located at Neuromuscular junction?", options: ["GABAA receptor", "Dopamine receptor", "Serotonin receptor", "Acetylcholine receptor"], answer: 3, explanation: "神經肌肉接頭處的乙醯膽鹼受體（nicotinic AChR）是非離子通道型受體，激活導致肌肉去極化和收縮。" },
+            { question: "Which of the following transmitter belongs to amino acid neurotransmitters?", options: ["GABA", "Dopamine", "Serotonin", "Acetylcholine"], answer: 0, explanation: "GABA（γ-amino butyric acid）是胺基酸神經傳遞物質，主要抑制性傳遞物質。多巴胺、血清素是單胺類。" },
+            { question: "The transmitter released in the inhibitory synapses is?", options: ["GABA", "Acetylcholine", "Serotonin", "Dopamine"], answer: 0, explanation: "GABA是中樞神經系統主要的抑制性神經傳遞物質。脊髓中則是Glycine。激活GABAA受體導致Cl-內流，超極化。" },
+            { question: "Which of the following transmitter is belonged to Biogenic Amines?", options: ["GABA", "Acetylcholine", "Dopamine", "Substance P"], answer: 2, explanation: "生物胺類包括：多巴胺、去甲基腎上腺素、腎上腺素、血清素。GABA是胺基酸，乙醯膽鹼是膽鹼衍生物。" },
+            { question: "Which of the following transmitter is belonged to Biogenic amines?", options: ["GABA", "Glycine", "Serotonin", "Acetylcholine"], answer: 2, explanation: "血清素（5-HT）是由色氨酸衍生的生物胺類神經傳遞物質，涉及情緒、睡眠和食慾調節。" },
+            { question: "Which of the following amino acids give the Umami flavor?", options: ["GABA", "Glycine", "Glutamate", "Dopamine"], answer: 2, explanation: "麩胺酸是鮮味（umami）的主要化學物質。鮮味由麩胺酸受體和I1R等受體感受。" },
+            { question: "Which of the following neurotransmitter mediates pain sensation at the spinal cord level?", options: ["Glycine", "Ach", "GABA", "Substance P"], answer: 3, explanation: "P物質（Substance P）是神經肽類，在脊髓感覺傳導中介導痛覺傳遞。" },
+            { question: "Which of the following neurotransmitter mediates synaptic inhibition in the brain?", options: ["Glycine", "Ach", "GABA", "Substance P"], answer: 2, explanation: "GABA是大腦的主要抑制性神經傳遞物質，約30%的突觸使用GABA進行抑制。" },
+            { question: "Which of the following amino acid is the major source for synthesize serotonin?", options: ["Phenylalanine", "Tyrosine", "Tryptophan", "Substance P"], answer: 2, explanation: "血清素由色氨酸（tryptophan）合成。色氨酸→5-羥色氨酸（5-HTP）→血清素（5-HT）。" },
+            { question: "The preganglionic neurons of sympathetic division release which of the following transmitter?", options: ["Serotonin", "Acetylcholine", "Norepinephrine", "Dopamine"], answer: 1, explanation: "交感神經的節前神經元（preganglionic neurons）釋放乙醯膽鹼。節後神經元才釋放去甲基腎上腺素。" },
+            { question: "Normally, the neuron resting potential is -65 mV, which of the following potential show stronger hyperpolarization?", options: ["-50 mV", "-70 mV", "-10 mV", "-80 mV"], answer: 3, explanation: "超極化是膜電位變得更負（更遠離0）。-80 mV比-65 mV更負，表示更強的超極化。" },
+            { question: "The meaning of refractory period of action potential is?", options: ["Activation of sodium channel", "Long-term inactivation of sodium channel", "Temporary inactivation of sodium channel", "Activation of potassium channel"], answer: 2, explanation: "不應期是由Na+通道的暫時失活引起。此時無論刺激多強都無法引發新的動作電位。包括絕對不應期和相對不應期。" },
+            { question: "In the spinal cord, which of the following cells ensheathe the axon of motor neurons?", options: ["Astrocytes", "Oligodendrocytes", "Schwann cells", "Microglia"], answer: 2, explanation: "周邊神經系統（包括脊髓前根的運動神經元軸突）由Schwann細胞進行髓鞘化。中樞神經系統由寡樹突膠質細胞髓鞘化。" },
+            { question: "Which of the following neuron is belong to peripheral nerve system?", options: ["Astrocytes", "Interneuron", "Schwann cells", "Microglia"], answer: 2, explanation: "Schwann細胞是外周神經系統的髓鞘形成細胞。其他選項要麼是神經膠質，要麼是中樞神經元。" },
+            { question: "The pyramidal neuron in the cortex, which of the following cells ensheathe its axon?", options: ["Astrocyte", "Oligodendrocytes", "Schwann cells", "Microglia"], answer: 1, explanation: "皮層錐體神經元是中樞神經系統（CNS）的神經元，其軸突由寡樹突膠質細胞進行髓鞘化。" },
+            { question: "In CNS neurons, which of the following cells ensheath its axon?", options: ["Astrocyte", "Oligodendrocytes", "Schwann cells", "Microglia"], answer: 1, explanation: "中樞神經系統的神經元軸突由寡樹突膠質細胞（oligodendrocyte）髓鞘化。一個寡樹突膠質細胞可以髓鞘化多個軸突。" },
+            { question: "Damage of Broca's area results?", options: ["Cannot speak a word", "Unable to understand language", "Cannot hear a word", "Cannot distinct the different words"], answer: 0, explanation: "Broca區（額下回）受損導致Broca失語症，患者無法說話或說話困難，但可以理解語言。" },
+            { question: "Damage of Wernicke's area results?", options: ["Cannot speak a word", "Unable to understand language", "Cannot hear a word", "Cannot distinct the different words"], answer: 1, explanation: "Wernicke區（顳上回後部）受損導致Wernicke失語症，患者無法理解語言，但可以說話（內容不連貫）。" },
+            { question: "Which of the following brain region involves circadian rhythm?", options: ["Amygdala", "Suprachiasmatic nucleus (SCN)", "Nucleus accumbens", "Cortex"], answer: 1, explanation: "視交叉上核（SCN）是晝夜節律的主要生物鐘。接受視網膜光信息，調節褪黑激素分泌。" },
+            { question: "Which of the following brain region involves fear emotion?", options: ["Amygdala", "Suprachiasmatic nucleus", "Nucleus accumbens", "Cortex"], answer: 0, explanation: "杏仁核（amygdala）是處理恐懼和情緒反應的關鍵結構。損傷杏仁核會導致恐懼反應缺陷。" },
+            { question: "Which of the following brain region is developed from Diencephalon?", options: ["Cerebrum", "Thalamus", "Brainstem", "Cerebellum"], answer: 1, explanation: "間腦衍生的結構包括丘腦（thalamus）、下丘腦（hypothalamus）、上髓、下髓等。" },
+            { question: "Which of the following brain region is developed from Metencephalon?", options: ["Cerebrum", "Thalamus", "Basal nuclei", "Cerebellum"], answer: 3, explanation: "後腦衍生的結構包括小腦（cerebellum）和橋腦（pons）。" },
+            { question: "Which of the following brain region is developed from Telencephalon?", options: ["Brainstem", "Thalamus", "Cerebrum", "Cerebellum"], answer: 2, explanation: "端腦衍生的結構包括大腦皮層、基底核、海馬體等，統稱大腦（cerebrum）。" },
+            { question: "Which of the following brain region is developed from Mesencephalon?", options: ["Cerebrum", "Thalamus", "Brainstem", "Cerebellum"], answer: 2, explanation: "中腦（mesencephalon）衍生的結構是中腦，屬於腦幹的一部分。" },
+            { question: "Which of the following sense involves Neuronal sensory receptor?", options: ["Pressure", "Hearing", "Smell", "Visual perception"], answer: 0, explanation: "壓力（觸覺和機械感受）由神經元感覺受體（如Meissner小體、Pacinian小體）感受。聽覺、嗅覺、視覺涉及特殊感受器細胞。" },
+            { question: "Which aspect of image can be enhanced lateral inhibition in visual system?", options: ["Brightness", "Contrast", "Resolution", "Colors"], answer: 1, explanation: "側向抑制增強影像對比度。暗區的水平細胞對亮區的視錐細胞進行抑制，加強邊界。" },
+            { question: "Which of the following part of neuron is responsible for transmitter release?", options: ["Dendrite", "Soma", "Axon hillock", "Synapses"], answer: 3, explanation: "突觸（synapse）是神經傳遞物質釋放的位點。具體是突觸小囊內儲存的神經傳遞物質經由突觸活動區釋放。" },
+            { question: "Which of the following part of the neuron is responsible for generating action potentials?", options: ["Dendrite", "Soma", "Axon hillock", "Synapses"], answer: 2, explanation: "軸突起始段（axon hillock）是動作電位起始位置。因為此處Na+通道密度最高，閾值最低。" },
+            { question: "Which of the following part of neuron is responsible for information input?", options: ["Dendrite", "Soma", "Axon hillock", "Synapses"], answer: 0, explanation: "樹突（dendrite）接收來自其他神經元的突觸輸入。樹突上有大量突觸受體。" },
+            { question: "The key structure mediates neurons communication is?", options: ["Axon hillock", "Axon only", "Soma only", "Synapse"], answer: 3, explanation: "突觸是神經元之間通訊的關鍵結構。位於突觸前膜和突後膜之間，允許神經傳遞物質傳遞。" },
+            { question: "Which of the following process is involved in \"Transduction\" in sensory pathway?", options: ["Conversion of stimulus energy into a change in receptor potential", "Initiation of action potentials", "Detection of different energy stimuli", "Integration of sensory information"], answer: 0, explanation: "換能（transduction）是將刺激能量（光、聲、化學物質等）轉換為感受器電位變化的過程。" },
+            { question: "Which of the following process is involved in \"Transmission\" in the sensory pathway?", options: ["Conversion of stimulus energy into a change in receptor potential", "Initiation of action potentials", "Detection of different energy stimuli", "Integration of sensory information"], answer: 1, explanation: "傳導（transmission）是沿著神經元傳遞信息，包括感受器電位、動作電位在神經元中的傳播。" },
+            { question: "Which of the following structure determine the pitch sensation?", options: ["Round window", "Oval window", "Basilar membrane", "Hair cell"], answer: 2, explanation: "基底膜（basilar membrane）的不同部位對不同頻率敏感。高頻在基部，低頻在尖部（Tonotopic map）。" },
+            { question: "Which of the following structure determines the pitch perception?", options: ["Round window", "Oval window", "Hair cell", "Basilar membrane"], answer: 3, explanation: "基底膜振動激活特定位置的毛細胞，大腦根據激活位置解碼音高。這是Helmholtz的共鳴理論。" },
+            { question: "Which of the following statement is correct about motor unit?", options: ["Including one motor neuron and all muscle fiber it controls", "Including two motor neurons and all muscle fiber it controls", "Including three motor neurons and all muscle fiber it controls", "Including one motor neuron and one muscle fiber"], answer: 0, explanation: "運動單位包括一個運動神經元及其支配的所有肌肉纖維。這是肌肉收縮的基本功能單位。" },
+            { question: "Which of the following things cannot be detected by thermoreceptors?", options: ["Pepper", "Menthol", "Tea", "Hot water"], answer: 0, explanation: "溫度受體無法檢測辣椒（black pepper）的辛辣感。辛辣由TRPV1（辣椒素受體）感受，是痛覺信號而非溫度信號。" },
+            { question: "Which of the following cells accumulate at the center of the fovea?", options: ["Rods cell", "Cone cell", "Bipolar cell", "Horizontal cell"], answer: 1, explanation: "中央凹（fovea）由視錐細胞密集排列而成，視桿細胞則分布在周邊視網膜。中央凹提供最高視敏度。" },
+            { question: "Activation of the parasympathetic system will ____.", options: ["accelerate heart rates", "relax bronchi in lungs", "dilate the pupil", "stimulate salivary gland secretion"], answer: 3, explanation: "副交感神經激活會：減緩心率、放鬆支氣管（使呼吸更容易）、縮小瞳孔、促進唾液分泌。只有D正確。" },
+            { question: "Activation of parasympathetic system will cause?", options: ["Slow heart rate", "Relaxes bronchi in lungs", "Dilates pupil", "Inhibits salivary gland secretion"], answer: 0, explanation: "副交感神經主要作用是「休息和消化」。激活會減速心率（通過乙醯膽鹼激活M2受體）。" },
+            { question: "Activation of rhodopsin will cause rod cells to_____.", options: ["release glutamate", "open sodium channels", "depolarize the membrane", "hydrolyze cGMP to GMP"], answer: 3, explanation: "光激活視紫紅質→激活G蛋白→激活PDE→分解cGMP→Na+通道關閉→超極化→停止釋放麩胺酸。" },
+            { question: "Activation of rhodopsin will cause ______ in cone or rod cells.", options: ["membrane depolarization", "inactivation of sodium channel", "glutamate release", "cGMP binding with sodium channel"], answer: 1, explanation: "光激活視紫紅質，最終導致cGMP濃度下降，使Na+/Ca2+通道關閉，膜超極化。" },
+            { question: "Which of the following stimuli can be detected by electromagnetic receptors?", options: ["Light", "Sound", "Chemicals", "Heat"], answer: 0, explanation: "電磁受體感受光線（電磁輻射）。聲波由機械受體感受，化學物質由化學受體感受，熱由溫度受體感受。" },
+            { question: "Which of the following drugs block removal of dopamine from synaptic cleft?", options: ["Nicotine", "Cocaine", "Opium", "Heroin"], answer: 1, explanation: "古柯鹼阻斷多巴胺重吸收抑制劑（dopamine reuptake inhibitor），導致多巴胺在突觸間隙積累，產生欣快感。" },
+            { question: "Which of the following drugs stimulates dopamine-releasing VTA neuron?", options: ["Cocaine", "Opium", "Nicotine", "Heroin"], answer: 2, explanation: "尼古丁激活腹側被蓋區（VTA）的多巴胺神經元，導致多巴胺釋放。這是尼古丁成癮的機制。" },
+            { question: "Which of the following brain region is involved in decision making?", options: ["The frontal lobe", "The temporal lobe", "Wernicke's area", "The occipital lobe"], answer: 0, explanation: "額葉（特別是前額葉皮層）涉及決策制定、規劃和執行功能。損傷額葉會導致判斷力和決策能力受損。" },
+            { question: "If a patient cannot speak, which of the following brain region may be damage?", options: ["Left frontal lobe", "Right parietal lobe", "Left temporal lobe", "Right frontal lobe"], answer: 0, explanation: "不能說話通常指Broca失語症，由左額葉（Broca區）受損引起。右利手的大多數人語言中樞在左半球。" },
+            { question: "Odorant receptors belong to which of the following group of receptors?", options: ["GPCR", "Proton pump", "TRP family", "Sodium channels"], answer: 0, explanation: "嗅覺受體是G蛋白偶聯受體（GPCR），激活後激活G蛋白→腺苷酸環化酶→cAMP→開放Na+/Ca2+通道→去極化。" },
+            { question: "The preganglionic neurons of sympathetic division locate at which of the following region?", options: ["Lumbar and Sacral segment of spinal cord", "The brain stem", "Cervical and Thoracic segment of spinal cord", "Thoracic and Lumbar segment of spinal cord"], answer: 3, explanation: "交感神經的節前神經元位於脊髓胸椎和腰椎節段（T1-L2）。副交感神經則位於腦幹和薦椎（S2-S4）。" },
+            { question: "Which of the following statement about human appetite is correct?", options: ["satiety center in thalamus", "ghrelin suppresses appetite", "glucagon suppresses appetite", "leptin triggers feeling hunger", "NPY triggers feeling hunger"], answer: 4, explanation: "正確的是：飽腹感中樞在下丘腦（不是丘腦）；Ghrelin促進食慾；Glucagon促進代謝；Leptin抑制食慾；NPY促進食慾。" },
+            { question: "Marine bony fishes have fewer and smaller nephrons than freshwater fishes, but they have___________ in the gills for osmoregulation.", options: ["Sodium cells", "Water cells", "Potassium cells", "Chloride cells", "Sodium-potassium exchanger cells"], answer: 3, explanation: "海洋硬骨魚的鰓含有氯離子細胞，主動排出過量的Na+和Cl-，以應對高滲透壓環境。淡水魚則需吸收鹽類。" },
+            { question: "Which of the following neuron is belong to peripheral nerve system?", options: ["Motor neuron", "Interneuron", "Microglia", "Astrocyte"], answer: 0, explanation: "運動神經元是外周神經系統的一部分，其胞體位於脊髓前角但軸突延伸至肌肉。中間神經元是中樞神經系統。膠質細胞不是神經元。" },
+            { question: "Which of the following neurotransmitter involves reward system?", options: ["Acetylcholine", "Glycine", "Dopamine", "Serotonin"], answer: 2, explanation: "多巴胺是獎賞系統的主要神經傳遞物質。中腦腹側被蓋區和腹側紋狀體的多巴胺信號涉及獎賞和動力。" }
+        ];
+
+        let currentQuestion = 0;
+        let selectedAnswers = {};
+        let wrongQuestions = [];
+        let feedbackTimer = null;
+
+        function renderQuestion() {
+            const q = questions[currentQuestion];
+            document.getElementById('questionText').textContent = q.question;
+            
+            const optionsContainer = document.getElementById('optionsContainer');
+            optionsContainer.innerHTML = '';
+            
+            q.options.forEach((option, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                if (selectedAnswers[currentQuestion] === index) {
+                    btn.classList.add('selected');
+                }
+                btn.innerHTML = `<span class="option-label">${String.fromCharCode(65 + index)}</span>${option}`;
+                btn.onclick = () => selectAnswer(index);
+                btn.disabled = document.querySelector('.feedback:not(.hidden)') !== null;
+                optionsContainer.appendChild(btn);
+            });
+
+            updateProgress();
+            updateButtons();
+            hideFeedback();
+        }
+
+        function selectAnswer(index) {
+            selectedAnswers[currentQuestion] = index;
+            renderQuestion();
+        }
+
+        function updateProgress() {
+            const total = questions.length;
+            const answered = Object.keys(selectedAnswers).length;
+            const percentage = ((currentQuestion + 1) / total) * 100;
+            
+            document.getElementById('progressFill').style.width = percentage + '%';
+            document.getElementById('questionNumber').textContent = `第 ${currentQuestion + 1} / ${total} 題`;
+            document.getElementById('wrongCount').textContent = `已作答: ${answered} | ❌ 錯誤: ${wrongQuestions.length}`;
+        }
+
+        function updateButtons() {
+            document.getElementById('prevBtn').disabled = currentQuestion === 0;
+            const hasAnswer = selectedAnswers[currentQuestion] !== undefined;
+            
+            if (currentQuestion === questions.length - 1) {
+                document.getElementById('nextBtn').innerHTML = '✓ 提交答案';
+                document.getElementById('nextBtn').className = 'btn btn-submit';
+                document.getElementById('nextBtn').disabled = !hasAnswer;
+                document.getElementById('nextBtn').onclick = submitQuiz;
+            } else {
+                document.getElementById('nextBtn').innerHTML = '下一題 →';
+                document.getElementById('nextBtn').className = 'btn btn-next';
+                document.getElementById('nextBtn').disabled = !hasAnswer;
+                document.getElementById('nextBtn').onclick = nextQuestion;
+            }
+
+            document.getElementById('warning').classList.toggle('hidden', hasAnswer);
+        }
+
+        function showFeedback(isCorrect) {
+            const q = questions[currentQuestion];
+            const userAnswer = selectedAnswers[currentQuestion];
+            const feedback = document.getElementById('feedback');
+            
+            if (isCorrect) {
+                feedback.className = 'feedback correct';
+                feedback.innerHTML = '<h3>✅ 正確！</h3><p style="font-size: 12px; margin-top: 10px;">即將進入下一題...</p>';
+            } else {
+                feedback.className = 'feedback incorrect';
+                feedback.innerHTML = `
+                    <h3>❌ 錯誤</h3>
+                    <div class="feedback-detail"><span style="color: #dc3545; font-weight: bold;">你的答案：</span> ${q.options[userAnswer]}</div>
+                    <div class="feedback-detail"><span style="color: #28a745; font-weight: bold;">正確答案：</span> ${q.options[q.answer]}</div>
+                    <div class="feedback-hint">💡 提示：${q.explanation}</div>
+                    <p style="font-size: 12px; margin-top: 10px;">即將進入下一題...</p>
+                `;
+            }
+            
+            feedback.classList.remove('hidden');
+            disableAllOptions();
+        }
+
+        function hideFeedback() {
+            document.getElementById('feedback').classList.add('hidden');
+            enableAllOptions();
+        }
+
+        function disableAllOptions() {
+            document.querySelectorAll('.option-btn').forEach(btn => btn.disabled = true);
+        }
+
+        function enableAllOptions() {
+            document.querySelectorAll('.option-btn').forEach(btn => btn.disabled = false);
+        }
+
+        function nextQuestion() {
+            if (selectedAnswers[currentQuestion] === undefined) return;
+            
+            const q = questions[currentQuestion];
+            const isCorrect = selectedAnswers[currentQuestion] === q.answer;
+            
+            showFeedback(isCorrect);
+            
+            if (!isCorrect && !wrongQuestions.includes(currentQuestion)) {
+                wrongQuestions.push(currentQuestion);
+            }
+
+            clearTimeout(feedbackTimer);
+            feedbackTimer = setTimeout(() => {
+                if (currentQuestion < questions.length - 1) {
+                    currentQuestion++;
+                    renderQuestion();
+                }
+            }, 2000);
+        }
+
+        function previousQuestion() {
+            if (currentQuestion > 0) {
+                clearTimeout(feedbackTimer);
+                currentQuestion--;
+                renderQuestion();
+            }
+        }
+
+        function submitQuiz() {
+            if (selectedAnswers[currentQuestion] === undefined) return;
+            
+            const q = questions[currentQuestion];
+            if (selectedAnswers[currentQuestion] !== q.answer && !wrongQuestions.includes(currentQuestion)) {
+                wrongQuestions.push(currentQuestion);
+            }
+
+            let score = 0;
+            questions.forEach((q, i) => {
+                if (selectedAnswers[i] === q.answer) score++;
+            });
+
+            showResults(score);
+        }
+
+        function showResults(score) {
+            document.querySelector('.quiz-mode').classList.remove('active');
+            document.querySelector('.results-mode').classList.add('active');
+            
+            const percentage = Math.round((score / questions.length) * 100);
+            document.getElementById('scorePercentage').textContent = percentage + '%';
+            document.getElementById('scoreText').textContent = `得分: ${score} / ${questions.length}`;
+            
+            let message = '💪 繼續加油！';
+            if (percentage >= 90) message = '🌟 傑出表現！';
+            else if (percentage >= 80) message = '👏 很好！';
+            else if (percentage >= 70) message = '✅ 及格';
+            
+            document.getElementById('scoreFeedback').textContent = message;
+
+            if (wrongQuestions.length > 0) {
+                document.getElementById('reviewBtn').style.display = 'block';
+                document.getElementById('wrongCount2').textContent = wrongQuestions.length;
+                document.getElementById('wrongCount3').textContent = wrongQuestions.length;
+            }
+
+            renderQuickView();
+            renderDetailedView();
+        }
+
+        function renderQuickView() {
+            const grid = document.getElementById('gridNumbers');
+            grid.innerHTML = '';
+            
+            questions.forEach((q, i) => {
+                const btn = document.createElement('button');
+                btn.className = 'grid-btn';
+                btn.textContent = i + 1;
+                
+                if (selectedAnswers[i] === undefined) {
+                    btn.classList.add('unanswered');
+                } else if (selectedAnswers[i] === q.answer) {
+                    btn.classList.add('correct');
+                } else {
+                    btn.classList.add('incorrect');
+                }
+                
+                grid.appendChild(btn);
+            });
+        }
+
+        function renderDetailedView() {
+            const container = document.getElementById('detailedAnswers');
+            container.innerHTML = '';
+            
+            questions.forEach((q, i) => {
+                const item = document.createElement('div');
+                const userAnswer = selectedAnswers[i];
+                
+                if (userAnswer === undefined) {
+                    item.className = 'answer-item unanswered';
+                } else if (userAnswer === q.answer) {
+                    item.className = 'answer-item correct';
+                } else {
+                    item.className = 'answer-item incorrect';
+                }
+                
+                const title = document.createElement('div');
+                title.className = 'answer-item-title';
+                title.innerHTML = `<span>${i + 1}. ${q.question.substring(0, 50)}...</span><span style="font-size: 14px;">▼</span>`;
+                
+                const content = document.createElement('div');
+                content.className = 'answer-item-content';
+                
+                if (userAnswer !== undefined) {
+                    content.innerHTML = `<div><span style="color: ${userAnswer === q.answer ? '#28a745' : '#dc3545'}; font-weight: bold;">你：${String.fromCharCode(65 + userAnswer)} - ${q.options[userAnswer]}</span></div>`;
+                    if (userAnswer !== q.answer) {
+                        content.innerHTML += `<div><span style="color: #28a745; font-weight: bold;">✓ 正確：${String.fromCharCode(65 + q.answer)} - ${q.options[q.answer]}</span></div>`;
+                    }
+                } else {
+                    content.innerHTML = '<span style="color: #666; font-weight: bold;">⚠️ 未作答</span>';
+                }
+                
+                const detail = document.createElement('div');
+                detail.className = 'answer-detail';
+                detail.innerHTML = `<p style="font-weight: bold; margin-bottom: 5px;">💡 詳解：</p><p>${q.explanation}</p>`;
+                
+                item.appendChild(title);
+                item.appendChild(content);
+                item.appendChild(detail);
+                
+                item.onclick = () => {
+                    detail.classList.toggle('show');
+                };
+                
+                container.appendChild(item);
+            });
+        }
+
+        function switchView(view) {
+            document.querySelectorAll('.view-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            document.querySelector('.quick-view').classList.toggle('active', view === 'quick');
+            document.querySelector('.detailed-view').classList.toggle('active', view === 'detailed');
+        }
+
+        function enterReview() {
+            document.querySelector('.results-mode').classList.remove('active');
+            document.querySelector('.review-mode').classList.add('active');
+            
+            const container = document.getElementById('reviewItems');
+            container.innerHTML = '';
+            
+            wrongQuestions.forEach(qIndex => {
+                const q = questions[qIndex];
+                const userAnswer = selectedAnswers[qIndex];
+                
+                const item = document.createElement('div');
+                item.className = 'review-item';
+                item.innerHTML = `
+                    <h4>第 ${qIndex + 1} 題</h4>
+                    <p>${q.question}</p>
+                    <p><span class="your-answer">❌ 你的答案：</span> ${String.fromCharCode(65 + userAnswer)} - ${q.options[userAnswer]}</p>
+                    <p><span class="correct-answer">✓ 正確答案：</span> ${String.fromCharCode(65 + q.answer)} - ${q.options[q.answer]}</p>
+                    <div class="explanation-box">
+                        <strong>💡 詳解：</strong><br>${q.explanation}
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function exitReview() {
+            document.querySelector('.review-mode').classList.remove('active');
+            document.querySelector('.results-mode').classList.add('active');
+        }
+
+        function resetQuiz() {
+            currentQuestion = 0;
+            selectedAnswers = {};
+            wrongQuestions = [];
+            clearTimeout(feedbackTimer);
+            
+            document.querySelector('.quiz-mode').classList.add('active');
+            document.querySelector('.results-mode').classList.remove('active');
+            document.querySelector('.review-mode').classList.remove('active');
+            
+            renderQuestion();
+        }
+
+        document.getElementById('reviewBtn').addEventListener('click', enterReview);
+
+        // 初始化
+        renderQuestion();
+    </script>
+</body>
+</html>
